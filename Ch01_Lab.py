@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # spark-submit Ch01_Lab.py
 from initspark import *
-sc, spark, conf, HOME = initspark()
+sc, spark, conf = initspark()
 
 print ('****** Main ******')
-cc = sc.textFile(HOME+'/datasets/finance/CreditCard.csv')
+cc = sc.textFile('/home/student/ROI/Spark/datasets/finance/CreditCard.csv')
 first = cc.first()
 cc = cc.filter(lambda x : x != first)
 cc.take(10)

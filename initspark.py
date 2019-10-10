@@ -5,8 +5,7 @@
 import platform, os, sys
 from os.path import dirname
 
-HOME = '/home/student/ROI/' + os.getenv("PROGRAM")
-sys.path.append(HOME)
+sys.path.append('/home/student/ROI/Spark')
 
 if not 'SPARK_HOME' in os.environ and not os.environ['SPARK_HOME'] in sys.path:
     sys.path.append(os.environ['SPARK_HOME']+'/python')
@@ -15,8 +14,7 @@ from pyspark import SparkConf, SparkContext
 from pyspark.sql import SparkSession, SQLContext
 from pyspark.sql.types import *
 
-def initspark(appname = "Test", servername = "local", cassandra="127.0.0.1", mongo="mongodb://127.0.0.1/classroom", home=HOME):
-    home = HOME
+def initspark(appname = "Test", servername = "local", cassandra="127.0.0.1", mongo="mongodb://127.0.0.1/classroom"):
     conf = SparkConf().set("spark.cassandra.connection.host", cassandra).setAppName(appname).setMaster(servername)
     sc = SparkContext(conf=conf)
     spark = SparkSession.builder.appName(appname) \
@@ -24,8 +22,8 @@ def initspark(appname = "Test", servername = "local", cassandra="127.0.0.1", mon
     .config("spark.mongodb.output.uri", mongo) \
     .enableHiveSupport().getOrCreate()
     sc.setLogLevel("ERROR")
-    return sc, spark, conf, HOME
+    return sc, spark, conf
 
 if __name__ == '__main__':
-    sc, spark, conf, HOME = initspark()
+    sc, spark, conf = initspark()
 
