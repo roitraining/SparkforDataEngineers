@@ -16,7 +16,7 @@ cc = cc.map(lambda x : (x[0][1:], x[1][1:-1], x[5], float(x[6])))
 print(cc.take(10))
 
 # Bonus
-cc = cc.map(lambda x : (x[0], x[1]), (x[2], x[3]))
+cc = cc.map(lambda x : ((x[0], x[1]), (x[2], x[3])))
 ccf = cc.filter(lambda x : x[1][0] == 'F').map(lambda x : (x[0], x[1][1]))
 ccg = ccf.reduceByKey(lambda x, y : x + y)
 #print (ccg.sortByKey().collect())
