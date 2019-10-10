@@ -12,11 +12,13 @@ cc.take(10)
 cc = cc.map(lambda x : x.split(',')) 
 cc.take(10)
 cc = cc.map(lambda x : ((x[0][1:], x[1][1:-1]), (x[5], float(x[6]))))
-print (cc.collect())
+#print (cc.collect())
+cc.show()
 
 # Bonus
 ccf = cc.filter(lambda x : x[1][0] == 'F').map(lambda x : (x[0], x[1][1]))
 ccg = ccf.reduceByKey(lambda x, y : x + y)
-print (ccg.sortByKey().collect())
+#print (ccg.sortByKey().collect())
+ccg.sortByKey().show()
 
 
