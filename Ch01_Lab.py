@@ -1,11 +1,8 @@
 #!/usr/bin/env python
-import sys, os
-PROGRAM = os.getenv("PROGRAM")
-PATH = '/home/student/ROI/' + PROGRAM
-sys.path.append(PATH)
+# spark-submit Ch01_Lab.py
 from initspark import *
-sc, spark, conf = initspark()
-cc = sc.textFile(PATH+'/datasets/finance/CreditCard.csv')
+sc, spark, conf, HOME = initspark()
+cc = sc.textFile(HOME+'/datasets/finance/CreditCard.csv')
 first = cc.first()
 cc = cc.filter(lambda x : x != first)
 cc.take(10)
