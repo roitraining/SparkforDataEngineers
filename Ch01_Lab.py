@@ -2,6 +2,7 @@
 # spark-submit Ch01_Lab.py
 from initspark import *
 sc, spark, conf = initspark()
+sc.setLogLevel('ERROR')
 
 print ('****** Main ******')
 cc = sc.textFile('/home/student/ROI/Spark/datasets/finance/CreditCard.csv')
