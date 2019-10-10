@@ -27,5 +27,5 @@ def initspark(appname = "Test", servername = "local", cassandra="127.0.0.1", mon
     return sc, spark, conf, HOME
 
 if __name__ == '__main__':
-    sc, spark, conf = initspark()
+    sc, spark, conf, HOME = initspark()
 
