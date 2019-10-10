@@ -5,7 +5,7 @@
 import platform, os, sys
 from os.path import dirname
 
-HOME = '/home/student/ROI/' + os.getenv("HOME")
+HOME = '/home/student/ROI/' + os.getenv("PROGRAM")
 sys.path.append(HOME)
 
 if not 'SPARK_HOME' in os.environ and not os.environ['SPARK_HOME'] in sys.path:
