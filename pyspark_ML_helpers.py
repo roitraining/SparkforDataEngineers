@@ -13,6 +13,7 @@ def describe_numeric_features(df, numeric_features):
     print(df.select(numeric_features).describe().toPandas().transpose())
 
 def scatter_matrix(df, numeric_features):
+    import pandas as pd
     numeric_data = df.select(numeric_features).toPandas()
     axs = pd.plotting.scatter_matrix(numeric_data, figsize=(8, 8));
     n = len(numeric_data.columns)
@@ -25,7 +26,7 @@ def scatter_matrix(df, numeric_features):
         h.xaxis.label.set_rotation(90)
         h.set_xticks(())
 
-def fix_categorical_data(df, categorical_features, target_col):
+def fix_categorical_data(df, categorical_features, target_col, numeric_features = []):
     from pyspark.ml.feature import OneHotEncoderEstimator, StringIndexer, VectorAssembler
     from pyspark.ml import Pipeline
 
@@ -59,6 +60,7 @@ def beta_coefficients(model):
     plt.show()
 
 def roc_curve(model):
+    from matplotlib import pyplot as plt
     summary = model.summary
     roc = summary.roc.toPandas()
     plt.plot(roc['FPR'],roc['TPR'])
@@ -69,6 +71,7 @@ def roc_curve(model):
     print('Training set area Under ROC: {}'.format(summary.areaUnderROC))
 
 def precision_recall(model):
+    from matplotlib import pyplot as plt
     summary = model.summary
     pr = summary.pr.toPandas()
     plt.plot(pr['recall'],pr['precision'])
@@ -95,9 +98,18 @@ def cm_percent(cm, length, legend = True):
     return x
 
 def evaluate_model(model):
-    beta_coefficients(lrModel)
-    roc_curve(lrModel)
-    precision_recall(lrModel)    
+    try:
+        beta_coefficients(model)
+    except:
+        pass
+    try:    
+        roc_curve(model)
+    except:
+        pass
+    try:
+        precision_recall(model)    
+    except:
+        pass
 
 def evaluate_predictions(predictions, show = True):
     from pyspark.ml.evaluation import BinaryClassificationEvaluator
@@ -152,3 +164,9 @@ def evaluate_predictions(predictions, show = True):
 
     return log    
 
+def predict_and_evaluate(model, test, show = True):
+    predictions = model.transform(test)
+    if show:
+        evaluate_model(model)
+    log = evaluate_predictions(predictions, show)
+    return (predictions, log)
