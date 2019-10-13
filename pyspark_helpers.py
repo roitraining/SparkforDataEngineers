@@ -1,3 +1,34 @@
+# you should make sure you have spark in your python path as below
+# export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/build:$PYTHONPATH
+# but if you don't it will append it automatically for this session
+
+import platform, os, sys
+from os.path import dirname
+
+sys.path.append('/home/student/ROI/Spark')
+
+if not 'SPARK_HOME' in os.environ and not os.environ['SPARK_HOME'] in sys.path:
+    sys.path.append(os.environ['SPARK_HOME']+'/python')
+
+from pyspark import SparkConf, SparkContext
+from pyspark.sql import SparkSession, SQLContext
+from pyspark.sql.types import *
+
+def initspark(appname = "Test", servername = "local", cassandra="127.0.0.1", mongo="mongodb://127.0.0.1/classroom"):
+    print ('initializing pyspark')
+    conf = SparkConf().set("spark.cassandra.connection.host", cassandra).setAppName(appname).setMaster(servername)
+    sc = SparkContext(conf=conf)
+    spark = SparkSession.builder.appName(appname) \
+    .config("spark.mongodb.input.uri", mongo) \
+    .config("spark.mongodb.output.uri", mongo) \
+    .enableHiveSupport().getOrCreate()
+    sc.setLogLevel("ERROR")
+    print ('pyspark initialized')
+    return sc, spark, conf
+
+if __name__ == '__main__':
+    sc, spark, conf = initspark()
+
 def drop_columns(df, collist):
     return df.select([c for c in df.columns if c not in collist])
 
@@ -10,7 +41,7 @@ def auto_categorical_features(df):
     return categorical_features
 
 def describe_numeric_features(df, numeric_features):
-    print(df.select(numeric_features).describe().toPandas().transpose())
+    print(df.select(numeric_features).describe().toPandas())
 
 def scatter_matrix(df, numeric_features):
     import pandas as pd
@@ -191,11 +222,19 @@ def OneHotEncode(df, columns):
         df1 = encoder.fit(df1).transform(df1).drop(col + '_Index')
     return df1
 
-def AssembleFeatures(df, categorical_features, numeric_features, label):
+def AssembleFeatures(df, categorical_features, numeric_features, target_label):
     from pyspark.ml.feature import VectorAssembler
 
     assemblerInputs = [c + "_Vector" for c in categorical_features] + numeric_features
     assembler = VectorAssembler(inputCols=assemblerInputs, outputCol="features")
-    return assembler.transform(df).withColumnRenamed(label, 'label').drop(*(numeric_features + [c + '_Vector' for c in categorical_features]))
+    return assembler.transform(df).withColumnRenamed(target_label, 'label').drop(*(numeric_features + [c + '_Vector' for c in categorical_features]))
 
+def MakeMLDataFrame(df, categorical_features, numeric_features, target_label):
+    df1 = StringIndexEncode(df, categorical_features + [target_label])
+    df2 = OneHotEncode(df1, categorical_features)
+    df3 =  AssembleFeatures(df2, categorical_features, numeric_features, target_label + '_Index')
+    return df3
 
+def display(df, limit = 10):
+    from IPython.display import display    
+    display(df.limit(limit).toPandas())
