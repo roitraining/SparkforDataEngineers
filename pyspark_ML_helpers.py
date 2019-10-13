@@ -27,20 +27,20 @@ def scatter_matrix(df, numeric_features):
         h.set_xticks(())
 
 def fix_categorical_data(df, categorical_features, target_col, numeric_features = []):
-    from pyspark.ml.feature import OneHotEncoderEstimator, StringIndexer, VectorAssembler
+    from pyspark.ml.feature import OneHotEncoderEstimator, StringIndexer, VectorAssembler, StringIndexerModel
     from pyspark.ml import Pipeline
 
     stages = []
 
     for c in categorical_features:
-        stringIndexer = StringIndexer(inputCol = c, outputCol = c + 'Index')
-        encoder = OneHotEncoderEstimator(inputCols=[stringIndexer.getOutputCol()], outputCols=[c + "classVec"])
+        stringIndexer = StringIndexer(inputCol = c, outputCol = c + '_Index')
+        encoder = OneHotEncoderEstimator(inputCols=[stringIndexer.getOutputCol()], outputCols=[c + "_classVec"])
         stages += [stringIndexer, encoder]
 
     label_stringIdx = StringIndexer(inputCol = target_col, outputCol = 'label')
     stages += [label_stringIdx]
 
-    assemblerInputs = [c + "classVec" for c in categorical_features] + numeric_features
+    assemblerInputs = [c + "_classVec" for c in categorical_features] + numeric_features
     assembler = VectorAssembler(inputCols=assemblerInputs, outputCol="features")
     stages += [assembler]
 
@@ -49,7 +49,8 @@ def fix_categorical_data(df, categorical_features, target_col, numeric_features 
     pipelineModel = pipeline.fit(df)
     dfx = pipelineModel.transform(df)
     dfx = dfx.select(['label', 'features'] + cols)
-    return dfx
+    catindexes = {x.getOutputCol() : x.labels for x in pipelineModel.stages if isinstance(x, StringIndexerModel)}
+    return dfx, catindexes
 
 def beta_coefficients(model):
     import matplotlib.pyplot as plt
@@ -89,8 +90,11 @@ def show_predictions(predictions, limit = 20):
     predictions.groupBy('prediction').count().show()
     predictions.select('label', 'rawPrediction', 'prediction', 'probability').show(limit)
 
-def better_collect(df):
+def collect_tuple(df):
     return [tuple(row) if len(tuple(row)) > 1 else tuple(row)[0] for row in df.collect()]
+
+def collect_dict(df):
+    return dict(collect_tuple(df))
 
 def cm_percent(cm, length, legend = True):
     import numpy as np
@@ -134,7 +138,7 @@ def evaluate_predictions(predictions, show = True):
     log['F1 Measure'] = metrics.fMeasure()
     
     # Statistics by class
-    distinctPredictions = better_collect(predictions.select('prediction').distinct())
+    distinctPredictions = collect_tuple(predictions.select('prediction').distinct())
     for x in sorted(distinctPredictions):
         log[x] = {}
         log[x]['precision'] = metrics.precision(x)
@@ -170,3 +174,28 @@ def predict_and_evaluate(model, test, show = True):
         evaluate_model(model)
     log = evaluate_predictions(predictions, show)
     return (predictions, log)
+
+def StringIndexEncode(df, columns):
+    from pyspark.ml.feature import StringIndexer
+    df1 = df
+    for col in columns:
+        indexer = StringIndexer(inputCol = col, outputCol = col+'_Index')
+        df1 = indexer.fit(df1).transform(df1).drop(col) 
+    return df1
+
+def OneHotEncode(df, columns):
+    from pyspark.ml.feature import OneHotEncoderEstimator
+    df1 = df
+    for col in columns:
+        encoder = OneHotEncoderEstimator(inputCols=[col + '_Index'], outputCols=[col+'_Vector'])
+        df1 = encoder.fit(df1).transform(df1).drop(col + '_Index')
+    return df1
+
+def AssembleFeatures(df, categorical_features, numeric_features, label):
+    from pyspark.ml.feature import VectorAssembler
+
+    assemblerInputs = [c + "_Vector" for c in categorical_features] + numeric_features
+    assembler = VectorAssembler(inputCols=assemblerInputs, outputCol="features")
+    return assembler.transform(df).withColumnRenamed(label, 'label').drop(*(numeric_features + [c + '_Vector' for c in categorical_features]))
+
+
