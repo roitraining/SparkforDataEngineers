@@ -222,20 +222,24 @@ def OneHotEncode(df, columns):
         df1 = encoder.fit(df1).transform(df1).drop(col + '_Index')
     return df1
 
-def AssembleFeatures(df, categorical_features, numeric_features, target_label = None):
+def AssembleFeatures(df, categorical_features, numeric_features, target_label = None, target_is_categorical = True):
     from pyspark.ml.feature import VectorAssembler
 
     assemblerInputs = [c + "_Vector" for c in categorical_features] + numeric_features
     assembler = VectorAssembler(inputCols=assemblerInputs, outputCol="features")
     if target_label:
-        return assembler.transform(df).withColumnRenamed(target_label, 'label').drop(*(numeric_features + [c + '_Vector' for c in categorical_features]))
+        return assembler.transform(df).withColumnRenamed(target_label, 'label' if target_is_categorical else 'target').drop(*(numeric_features + [c + '_Vector' for c in categorical_features]))
     return assembler.transform(df).drop(*(numeric_features + [c + '_Vector' for c in categorical_features]))
     
-def MakeMLDataFrame(df, categorical_features, numeric_features, target_label = None):
-    if target_label:
+def MakeMLDataFrame(df, categorical_features, numeric_features, target_label = None, target_is_categorical = True):
+    if target_is_categorical:
        df1 = StringIndexEncode(df, categorical_features + [target_label])
        df2 = OneHotEncode(df1, categorical_features)
        df3 =  AssembleFeatures(df2, categorical_features, numeric_features, target_label + '_Index')
+    elif target_label:
+       df1 = StringIndexEncode(df, categorical_features)
+       df2 = OneHotEncode(df1, categorical_features)
+       df3 =  AssembleFeatures(df2, categorical_features, numeric_features, target_label, False)
     else:
        df1 = StringIndexEncode(df, categorical_features)
        df2 = OneHotEncode(df1, categorical_features)
