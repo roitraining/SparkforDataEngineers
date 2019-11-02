@@ -9,5 +9,5 @@ rm -r ~/ROI/Spark/testsave
 rm -r ~/ROI/Spark/flower_photos
 rm ~/ROI/Spark/model-full.h5
 rm ~/ROI/Spark/simple-binary-classification
-
+hadoop fs -rm -r /categories
 
